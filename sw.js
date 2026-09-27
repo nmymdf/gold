@@ -1,5 +1,5 @@
 // 簡易離線快取：頁面檔案先用快取；資料 CSV 一律先抓網路，失敗才用快取
-const CACHE = 'gold-v1';
+const CACHE = 'gold-v2';
 const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'manifest.webmanifest', 'icon.svg'];
 
 self.addEventListener('install', (e) => {

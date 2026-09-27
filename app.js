@@ -8,7 +8,7 @@ const state = {
   shop: [],  // {date, time, sell, buy, t}         每錢
   days: 30,
   unit: 'qian',
-  tab: 'bot',
+  tab: 'shop',
   hidden: new Set(),
   calcDir: 'buy',
   calcMode: 'weight',
@@ -53,6 +53,10 @@ async function load() {
 }
 
 /* ---------- 最新價格卡片 ---------- */
+const WEEK = '日一二三四五六';
+const weekday = (date) => WEEK[new Date(`${date}T12:00:00+08:00`).getUTCDay()];
+const md = (date) => `${+date.slice(5, 7)}/${+date.slice(8, 10)}`;
+
 function setChange(el, cur, prev) {
   el.className = 'chg';
   if (prev == null) { el.textContent = ''; return; }
@@ -63,33 +67,107 @@ function setChange(el, cur, prev) {
   else { el.classList.add('flat'); el.textContent = '— 持平'; }
 }
 
+// 台銀：每個交易日取「收盤」；當天尚未收盤則取當天最後一筆
+function botDaily() {
+  const byDate = new Map();
+  for (const r of state.bot) byDate.set(r.date, r);   // 已依時間排序，最後一筆會留下
+  return [...byDate.values()];
+}
+
 function renderCards() {
-  const b = state.bot, s = state.shop;
-  if (b.length) {
-    const cur = b[b.length - 1], prev = b[b.length - 2];
-    $('bot-sell').textContent = fmt(cur.sell);
-    $('bot-buy').textContent = fmt(cur.buy);
-    setChange($('bot-sell-chg'), cur.sell, prev && prev.sell);
-    setChange($('bot-buy-chg'), cur.buy, prev && prev.buy);
-    $('bot-meta').textContent = `${cur.date} ${cur.slot} · 掛牌 ${cur.time}（與前一筆比較）`;
-    $('bot-qian').textContent = `換算每錢：賣出 ${fmt(cur.sell * GRAM_PER_QIAN)} / 買進 ${fmt(cur.buy * GRAM_PER_QIAN)}`;
-  } else {
-    $('bot-meta').textContent = '尚無資料';
-  }
+  const s = state.shop;
   if (s.length) {
     const cur = s[s.length - 1], prev = s[s.length - 2];
     $('shop-sell').textContent = fmt(cur.sell);
     $('shop-buy').textContent = fmt(cur.buy);
     setChange($('shop-sell-chg'), cur.sell, prev && prev.sell);
     setChange($('shop-buy-chg'), cur.buy, prev && prev.buy);
-    $('shop-meta').textContent = `${cur.date} ${cur.time} 公告（與前一日比較）`;
+    $('shop-meta').textContent = `${md(cur.date)}（${weekday(cur.date)}）${cur.time} 公告`;
   } else {
     $('shop-meta').textContent = '尚無資料';
   }
+
+  const b = state.bot;
+  if (b.length) {
+    const cur = b[b.length - 1];
+    const prevDay = botDaily().filter((r) => r.date < cur.date).pop();   // 前一交易日收盤
+    $('bot-sell').textContent = fmt(cur.sell);
+    $('bot-buy').textContent = fmt(cur.buy);
+    setChange($('bot-sell-chg'), cur.sell, prevDay && prevDay.sell);
+    setChange($('bot-buy-chg'), cur.buy, prevDay && prevDay.buy);
+    $('bot-meta').textContent = `${md(cur.date)}（${weekday(cur.date)}）${cur.slot} · ${cur.time} 掛牌`;
+    $('bot-qian').textContent = `換算每錢　賣出 ${fmt(cur.sell * GRAM_PER_QIAN)}　買進 ${fmt(cur.buy * GRAM_PER_QIAN)}`;
+  } else {
+    $('bot-meta').textContent = '尚無資料';
+  }
+
   const last = Math.max(b.length ? b[b.length - 1].t : 0, s.length ? s[s.length - 1].t : 0);
   $('updated').textContent = last
-    ? `最後資料時間：${new Date(last).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false })}`
+    ? `資料更新：${new Date(last).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false, month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`
     : '目前尚無資料';
+  renderSparks();
+}
+
+/* ---------- 卡片內：近三個交易日收盤小圖 ---------- */
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function svgEl(tag, attrs, text) {
+  const el = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  if (text != null) el.textContent = text;
+  return el;
+}
+
+function drawSpark(box, rows, subLabel) {
+  const w = box.clientWidth, h = box.clientHeight;
+  box.replaceChildren();
+  if (!w || !h) return;
+  const svg = svgEl('svg', { viewBox: `0 0 ${w} ${h}`, 'aria-hidden': 'true' });
+  box.append(svg);
+  if (!rows.length) {
+    svg.append(svgEl('text', { class: 'sp-empty', x: w / 2, y: h / 2 }, '尚無資料'));
+    return;
+  }
+  const compact = h < 120;   // 矮螢幕：省略買進那一行
+  const padX = Math.min(48, w / 6), top = 24, bottom = compact ? 22 : 38;
+  const plotH = Math.max(10, h - top - bottom);
+  const vals = rows.map((r) => r.sell);
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  const span = Math.max(hi - lo, hi * 0.004);
+  lo -= span * 0.25; hi += span * 0.25;
+  const x = (i) => (rows.length === 1 ? w / 2 : padX + (i * (w - padX * 2)) / (rows.length - 1));
+  const y = (v) => top + (1 - (v - lo) / (hi - lo)) * plotH;
+  const baseY = top + plotH + 4;
+
+  // 漸層面積
+  const id = `g-${box.id}`;
+  const defs = svgEl('defs', {});
+  const grad = svgEl('linearGradient', { id, x1: 0, y1: 0, x2: 0, y2: 1 });
+  grad.append(svgEl('stop', { offset: '0%', 'stop-color': 'var(--c)', 'stop-opacity': '.28' }));
+  grad.append(svgEl('stop', { offset: '100%', 'stop-color': 'var(--c)', 'stop-opacity': '0' }));
+  defs.append(grad);
+  svg.append(defs);
+
+  const pts = rows.map((r, i) => [x(i), y(r.sell)]);
+  if (pts.length > 1) {
+    const line = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join('');
+    svg.append(svgEl('path', { d: `${line}L${pts[pts.length - 1][0]},${baseY}L${pts[0][0]},${baseY}Z`, fill: `url(#${id})` }));
+    svg.append(svgEl('path', { class: 'sp-line', d: line }));
+  }
+  svg.append(svgEl('line', { class: 'sp-base', x1: 0, x2: w, y1: baseY, y2: baseY }));
+
+  rows.forEach((r, i) => {
+    const [px, py] = pts[i];
+    const last = i === rows.length - 1;
+    svg.append(svgEl('circle', { class: 'sp-dot' + (last ? ' last' : ''), cx: px, cy: py, r: last ? 6 : 4.5 }));
+    svg.append(svgEl('text', { class: 'sp-val' + (last ? ' last' : ''), x: px, y: py - 11 }, fmt(r.sell)));
+    svg.append(svgEl('text', { class: 'sp-date', x: px, y: baseY + 15 }, `${md(r.date)}（${weekday(r.date)}）${r.slot && r.slot !== '收盤' ? r.slot : ''}`));
+    if (!compact) svg.append(svgEl('text', { class: 'sp-sub', x: px, y: baseY + 29 }, `${subLabel} ${fmt(r.buy)}`));
+  });
+}
+
+function renderSparks() {
+  drawSpark($('shop-spark'), state.shop.slice(-3), '買進');
+  drawSpark($('bot-spark'), botDaily().slice(-3), '買進');
 }
 
 /* ---------- 走勢圖 ---------- */
@@ -219,7 +297,9 @@ function latest(src) { const a = state[src]; return a.length ? a[a.length - 1] :
 function resCard(label, value, detail, best) {
   const div = document.createElement('div');
   div.className = 'res' + (best ? ' best' : '');
-  const l = document.createElement('div'); l.className = 'lbl'; l.textContent = label + (best ? '　★ 較划算' : '');
+  const l = document.createElement('div'); l.className = 'lbl';
+  const name = document.createElement('span'); name.textContent = label; l.append(name);
+  if (best) { const bdg = document.createElement('span'); bdg.className = 'badge'; bdg.textContent = '★ 較划算'; l.append(bdg); }
   const v = document.createElement('div'); v.className = 'val'; v.textContent = value;
   const d = document.createElement('div'); d.className = 'det'; d.textContent = detail;
   div.append(l, v, d);
@@ -315,6 +395,14 @@ function bind() {
     renderTable();
   });
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { renderLegend(); renderChart(); });
+  if (window.ResizeObserver) {
+    let raf = 0;
+    const ro = new ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(renderSparks); });
+    ro.observe($('shop-spark'));
+    ro.observe($('bot-spark'));
+  } else {
+    window.addEventListener('resize', renderSparks);
+  }
 }
 
 function renderAll() {

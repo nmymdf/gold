@@ -4,44 +4,126 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>黃金價格走勢</title>
-<meta name="description" content="臺灣銀行黃金存摺（每公克）與銀樓牌價（每錢）每日走勢">
-<meta name="theme-color" content="#b8860b">
+<meta name="description" content="銀樓牌價（每錢）與臺灣銀行黃金存摺（每公克）每日走勢">
+<meta name="theme-color" content="#f6f3ea" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121210" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="top">
-  <h1>黃金價格走勢</h1>
-  <p class="byline"><em>作者：ArchieKUO　專為 林葉玉 設計</em></p>
-  <p class="sub" id="updated">載入中…</p>
-</header>
 
-<main>
-  <section class="cards">
-    <article class="card" aria-labelledby="bot-title">
-      <h2 id="bot-title">臺灣銀行 黃金存摺 <span class="unit">每 1 公克</span></h2>
-      <dl class="prices">
-        <div><dt>本行賣出<small>（你買入）</small></dt><dd id="bot-sell">—</dd><dd class="chg" id="bot-sell-chg"></dd></div>
-        <div><dt>本行買進<small>（你賣出）</small></dt><dd id="bot-buy">—</dd><dd class="chg" id="bot-buy-chg"></dd></div>
-      </dl>
-      <p class="meta" id="bot-meta"></p>
-      <p class="meta" id="bot-qian"></p>
+<!-- 第一個畫面：標題＋兩張報價卡，剛好一屏 -->
+<div class="screen">
+  <header class="top">
+    <div class="brand">
+      <img src="icon.svg" alt="" width="36" height="36">
+      <div>
+        <h1>黃金價格走勢</h1>
+        <p class="byline"><em>作者：ArchieKUO　專為 林葉玉 設計</em></p>
+      </div>
+    </div>
+    <p class="updated" id="updated">載入中…</p>
+  </header>
+
+  <section class="quotes">
+    <article class="quote" data-src="shop" aria-labelledby="shop-title">
+      <div class="q-main">
+        <header class="q-head">
+          <h2 id="shop-title">銀樓牌價</h2>
+          <span class="q-unit">元／錢</span>
+        </header>
+        <p class="q-meta" id="shop-meta"></p>
+        <div class="q-prices">
+          <div class="q-price">
+            <span class="q-lbl">賣出 <small>你買入</small></span>
+            <span class="q-val" id="shop-sell">—</span>
+            <span class="chg" id="shop-sell-chg"></span>
+          </div>
+          <div class="q-price">
+            <span class="q-lbl">買進 <small>你賣出</small></span>
+            <span class="q-val" id="shop-buy">—</span>
+            <span class="chg" id="shop-buy-chg"></span>
+          </div>
+        </div>
+      </div>
+      <figure class="spark">
+        <figcaption>近三個交易日 · 賣出</figcaption>
+        <div class="spark-box" id="shop-spark" role="img" aria-label="銀樓近三個交易日賣出價"></div>
+      </figure>
     </article>
-    <article class="card" aria-labelledby="shop-title">
-      <h2 id="shop-title">銀樓牌價 <span class="unit">每 1 錢</span></h2>
-      <dl class="prices">
-        <div><dt>賣出<small>（你買入）</small></dt><dd id="shop-sell">—</dd><dd class="chg" id="shop-sell-chg"></dd></div>
-        <div><dt>買進<small>（你賣出）</small></dt><dd id="shop-buy">—</dd><dd class="chg" id="shop-buy-chg"></dd></div>
-      </dl>
-      <p class="meta" id="shop-meta"></p>
+
+    <article class="quote" data-src="bot" aria-labelledby="bot-title">
+      <div class="q-main">
+        <header class="q-head">
+          <h2 id="bot-title">臺灣銀行 黃金存摺</h2>
+          <span class="q-unit">元／公克</span>
+        </header>
+        <p class="q-meta" id="bot-meta"></p>
+        <div class="q-prices">
+          <div class="q-price">
+            <span class="q-lbl">本行賣出 <small>你買入</small></span>
+            <span class="q-val" id="bot-sell">—</span>
+            <span class="chg" id="bot-sell-chg"></span>
+          </div>
+          <div class="q-price">
+            <span class="q-lbl">本行買進 <small>你賣出</small></span>
+            <span class="q-val" id="bot-buy">—</span>
+            <span class="chg" id="bot-buy-chg"></span>
+          </div>
+        </div>
+        <p class="q-note" id="bot-qian"></p>
+      </div>
+      <figure class="spark">
+        <figcaption>近三個交易日收盤 · 賣出</figcaption>
+        <div class="spark-box" id="bot-spark" role="img" aria-label="臺灣銀行近三個交易日收盤賣出價"></div>
+      </figure>
     </article>
   </section>
 
+  <a class="more" href="#tools">過去走勢・計算機 <span aria-hidden="true">↓</span></a>
+</div>
+
+<main id="tools">
+  <section class="panel trend" aria-labelledby="trend-title">
+    <h2 class="p-title" id="trend-title">過去走勢</h2>
+    <div class="row">
+      <div class="seg" id="range" role="radiogroup" aria-label="期間">
+        <button data-days="7">7天</button>
+        <button data-days="30" class="on">1月</button>
+        <button data-days="90">3月</button>
+        <button data-days="365">1年</button>
+        <button data-days="0">全部</button>
+      </div>
+      <div class="seg" id="unit" role="radiogroup" aria-label="單位">
+        <button data-unit="qian" class="on">每錢</button>
+        <button data-unit="gram">每公克</button>
+      </div>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="chart-wrap"><canvas id="chart" aria-label="金價走勢圖" role="img"></canvas></div>
+    <p class="note">台銀價格換算單位後與銀樓並列比較（1 錢 = 3.75 公克）。實線＝賣出（你買入），虛線＝買進（你賣出）。</p>
+  </section>
+
+  <section class="panel history" aria-labelledby="hist-title">
+    <h2 class="p-title" id="hist-title">歷史明細</h2>
+    <div class="tabs" role="tablist">
+      <button role="tab" data-tab="shop" class="on" aria-selected="true">銀樓（每錢）</button>
+      <button role="tab" data-tab="bot" aria-selected="false">台銀（每公克）</button>
+    </div>
+    <div class="table-wrap">
+      <table id="table">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="downloads">下載原始資料：<a href="data/shop.csv" download>銀樓 CSV</a> · <a href="data/bot.csv" download>台銀 CSV</a></p>
+  </section>
+
   <section class="panel calc" aria-labelledby="calc-title">
-    <h2 id="calc-title">買賣簡易計算機</h2>
-    <div class="calc-row">
+    <h2 class="p-title" id="calc-title">買賣簡易計算機</h2>
+    <div class="row">
       <div class="seg" id="calc-dir" role="radiogroup" aria-label="買或賣">
         <button data-dir="buy" class="on">我要買</button>
         <button data-dir="sell">我要賣</button>
@@ -51,7 +133,7 @@
         <button data-mode="money">輸入金額</button>
       </div>
     </div>
-    <div class="calc-row">
+    <div class="row">
       <label class="field"><span id="calc-label">重量</span>
         <input id="calc-qty" type="number" inputmode="decimal" min="0" step="any" value="1">
       </label>
@@ -66,8 +148,8 @@
     <div class="calc-out" id="calc-out" aria-live="polite"></div>
 
     <details class="pnl">
-      <summary>損益試算（我之前買的，現在賣掉賺多少？）</summary>
-      <div class="calc-row">
+      <summary>損益試算（之前買的，現在賣掉賺多少？）</summary>
+      <div class="row">
         <label class="field"><span>買入總成本（元）</span>
           <input id="pnl-cost" type="number" inputmode="decimal" min="0" step="any" placeholder="例如 16000">
         </label>
@@ -84,40 +166,7 @@
       </div>
       <div class="calc-out" id="pnl-out" aria-live="polite"></div>
     </details>
-    <p class="note">以最新一筆牌價計算，未含手續費、工錢；銀樓實際成交價依各店而異。1 兩 = 10 錢 = 37.5 公克。</p>
-  </section>
-
-  <section class="panel">
-    <div class="filters" role="group" aria-label="篩選">
-      <div class="seg" id="range" role="radiogroup" aria-label="期間">
-        <button data-days="7">7天</button>
-        <button data-days="30" class="on">1月</button>
-        <button data-days="90">3月</button>
-        <button data-days="365">1年</button>
-        <button data-days="0">全部</button>
-      </div>
-      <div class="seg" id="unit" role="radiogroup" aria-label="單位">
-        <button data-unit="qian" class="on">每錢</button>
-        <button data-unit="gram">每公克</button>
-      </div>
-    </div>
-    <div class="legend" id="legend"></div>
-    <div class="chart-wrap"><canvas id="chart" aria-label="金價走勢圖" role="img"></canvas></div>
-    <p class="note">1 錢 = 3.75 公克。台銀價格換算單位後與銀樓並列比較。實線＝賣出（你買入的價格），虛線＝買進（你賣出的價格）。</p>
-  </section>
-
-  <section class="panel">
-    <div class="tabs" role="tablist">
-      <button role="tab" data-tab="bot" class="on" aria-selected="true">台銀（每公克）</button>
-      <button role="tab" data-tab="shop" aria-selected="false">銀樓（每錢）</button>
-    </div>
-    <div class="table-wrap">
-      <table id="table">
-        <thead></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-    <p class="downloads">下載原始資料：<a href="data/bot.csv" download>台銀 CSV</a> · <a href="data/shop.csv" download>銀樓 CSV</a></p>
+    <p class="note">以最新牌價計算，未含手續費、工錢；銀樓實際成交價依各店而異。1 兩 = 10 錢 = 37.5 公克。</p>
   </section>
 </main>
 
