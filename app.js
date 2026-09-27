@@ -137,19 +137,22 @@ function renderLegend() {
 
 function renderChart() {
   if (!window.Chart) return;
-  const datasets = SERIES.map((s) => ({
+  const datasets = SERIES.map((s) => {
+    const rows = inRange(state[s.src]);
+    return {
     label: s.label,
     hidden: state.hidden.has(s.key),
-    data: inRange(state[s.src]).map((r) => ({ x: r.t, y: Math.round(convert(s.src, r[s.field]) * 100) / 100, r })),
+    data: rows.map((r) => ({ x: r.t, y: Math.round(convert(s.src, r[s.field]) * 100) / 100, r })),
     borderColor: cssVar(s.color),
     backgroundColor: cssVar(s.color),
     borderWidth: 2,
     borderDash: s.dash ? [6, 4] : [],
-    pointRadius: 0,
+    pointRadius: rows.length < 40 ? 3 : 0,   // 資料少時畫點，才看得到
     pointHoverRadius: 4,
     pointHitRadius: 12,
     tension: 0,
-  }));
+  };
+  });
   const grid = cssVar('--grid'), text = cssVar('--text-2');
   const tickDate = (v) => new Date(v).toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei', month: 'numeric', day: 'numeric' });
   const opts = {
