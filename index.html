@@ -9,8 +9,11 @@
 <meta name="theme-color" content="#121210" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-title" content="黃金價格">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
 
@@ -24,7 +27,10 @@
         <p class="byline"><em>作者：ArchieKUO　專為 林葉玉 設計</em></p>
       </div>
     </div>
-    <p class="updated" id="updated">載入中…</p>
+    <div class="top-right">
+      <p class="updated" id="updated">載入中…</p>
+      <button type="button" class="install-btn" id="install-btn" hidden>＋ <span class="long">加到</span>主畫面</button>
+    </div>
   </header>
 
   <section class="quotes">
@@ -180,7 +186,20 @@
   <p>資料來源：臺灣銀行黃金存摺牌價、銀樓參考牌價（經 <a href="https://www.goldlegend.com/" rel="noopener">goldlegend.com</a> 轉載）。實際交易請以銀行及各銀樓公告為準，本頁僅供參考。</p>
 </footer>
 
+<!-- 加到主畫面：大字說明視窗 -->
+<dialog class="install-dlg" id="install-dlg" aria-labelledby="install-title">
+  <img src="icon-192.png" alt="" width="72" height="72">
+  <h2 id="install-title">把「黃金價格」放到手機主畫面</h2>
+  <p class="install-sub">以後點金色圖示就能直接看金價</p>
+  <div id="install-body"></div>
+  <div class="install-actions">
+    <button type="button" class="big" id="install-go">好，加入</button>
+    <button type="button" class="later" id="install-later">以後再說</button>
+  </div>
+</dialog>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="app.js?v=5"></script>
+<script src="app.js?v=6"></script>
+<script src="install.js?v=6"></script>
 </body>
 </html>
