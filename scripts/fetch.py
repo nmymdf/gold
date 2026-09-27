@@ -162,15 +162,14 @@ def parse_shop_history(page: str) -> list[dict]:
     """歷史頁的圖表資料：var buy = [[毫秒, 價格], ...]; var sell = [...]"""
     series = {}
     for name in ("buy", "sell"):
-        m = re.search(rf"\b{name}\s*=\s*(\[\s*\[.*?\]\s*\])\s*;", page, flags=re.S)
-        if not m:
-            i = page.find(f"{name} = [")
-            raise ValueError(f"歷史頁找不到 {name} 資料：{page[max(0, i - 300):i + 900]!r}")
-        series[name] = {int(t): v for t, v in json.loads(m.group(1))}
+        m = re.search(rf"\b{name}\s*=\s*\[(.*?)\]\s*;", page, flags=re.S)
+        pairs = re.findall(r"\[\s*(\d+)\s*,\s*([\d.]+)\s*\]", m.group(1)) if m else []
+        if not pairs:
+            raise ValueError(f"歷史頁找不到 {name} 資料")
+        series[name] = {dt.datetime.fromtimestamp(int(t) / 1000, TW).date(): float(v) for t, v in pairs}
     rows = []
-    for t in sorted(series["sell"].keys() & series["buy"].keys()):
-        day = dt.datetime.fromtimestamp(t / 1000, TW).date()
-        sell, buy = float(series["sell"][t]), float(series["buy"][t])
+    for day in sorted(series["sell"].keys() & series["buy"].keys()):
+        sell, buy = series["sell"][day], series["buy"][day]
         if QIAN_RANGE[0] <= buy <= sell <= QIAN_RANGE[1]:
             rows.append({"date": day.isoformat(), "time": "10:00", "sell": f"{sell:g}", "buy": f"{buy:g}",
                          "bar_recycle": "", "jewelry_recycle": ""})
