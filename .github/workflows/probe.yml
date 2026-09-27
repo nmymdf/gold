@@ -1,11 +1,14 @@
 name: probe
 on:
   push:
-    paths: [tools/probe.sh, .github/workflows/probe.yml]
+    paths: [tools/probe.py, .github/workflows/probe.yml]
   workflow_dispatch:
 jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: bash tools/probe.sh
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install playwright && python -m playwright install --with-deps chromium
+      - run: python tools/probe.py
