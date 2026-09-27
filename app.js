@@ -82,7 +82,7 @@ function renderCards() {
     $('shop-buy').textContent = fmt(cur.buy);
     setChange($('shop-sell-chg'), cur.sell, prev && prev.sell);
     setChange($('shop-buy-chg'), cur.buy, prev && prev.buy);
-    $('shop-meta').textContent = `${md(cur.date)}（${weekday(cur.date)}）${cur.time} 公告`;
+    $('shop-meta').textContent = `${md(cur.date)} ${weekday(cur.date)} ${cur.time} 公告`;
   } else {
     $('shop-meta').textContent = '尚無資料';
   }
@@ -95,7 +95,7 @@ function renderCards() {
     $('bot-buy').textContent = fmt(cur.buy);
     setChange($('bot-sell-chg'), cur.sell, prevDay && prevDay.sell);
     setChange($('bot-buy-chg'), cur.buy, prevDay && prevDay.buy);
-    $('bot-meta').textContent = `${md(cur.date)}（${weekday(cur.date)}）${cur.slot} · ${cur.time} 掛牌`;
+    $('bot-meta').textContent = `${md(cur.date)} ${weekday(cur.date)} ${cur.slot} ${cur.time} 掛牌`;
     $('bot-qian').textContent = `換算每錢　賣出 ${fmt(cur.sell * GRAM_PER_QIAN)}　買進 ${fmt(cur.buy * GRAM_PER_QIAN)}`;
   } else {
     $('bot-meta').textContent = '尚無資料';
@@ -117,7 +117,7 @@ function renderRecent(tbody, rows) {
     const i = last4.indexOf(r), prev = last4[i - 1];
     const tr = document.createElement('tr');
     const cells = [
-      [`${md(r.date)}（${weekday(r.date)}）${r.slot && r.slot !== '收盤' ? r.slot : ''}`, ''],
+      [`${md(r.date)} ${weekday(r.date)}${r.slot && r.slot !== '收盤' ? ' ' + r.slot : ''}`, ''],
       [fmt(r.sell), ''],
       [fmt(r.buy), 'buy'],
     ];

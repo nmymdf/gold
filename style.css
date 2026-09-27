@@ -84,9 +84,8 @@ h1, h2 { margin: 0; }
 
 /* ---------- 第一屏 ---------- */
 .screen {
-  height: 100vh;
-  height: 100svh;
-  min-height: 600px;
+  min-height: 100vh;
+  min-height: 100svh;   /* 至少一屏；內容放不下時往下延伸，絕不裁切 */
   max-width: 1040px;
   margin: 0 auto;
   padding: max(12px, env(safe-area-inset-top)) 16px 8px;
@@ -101,13 +100,12 @@ h1 { font-size: 1.25rem; letter-spacing: .02em; line-height: 1.25; }
 .byline { margin: 0; color: var(--accent); font-size: .8125rem; }
 .updated { margin: 0; color: var(--muted); font-size: .75rem; }
 
-.quotes { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+.quotes { flex: 1; display: flex; flex-direction: column; gap: 12px; }
 
 .quote {
   --c: var(--gold);
   --c-soft: var(--gold-soft);
-  flex: 1 1 0;
-  min-height: 0;
+  flex: 1 0 auto;
   position: relative;
   overflow: hidden;
   background: var(--surface);
@@ -126,14 +124,14 @@ h1 { font-size: 1.25rem; letter-spacing: .02em; line-height: 1.25; }
   background: linear-gradient(90deg, var(--c), transparent 85%);
 }
 .q-main { display: flex; flex-direction: column; min-width: 0; }
-.q-head { display: flex; align-items: baseline; gap: 8px; }
+.q-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
 .q-head h2 { font-size: 1.0625rem; font-weight: 700; }
 .q-head h2::before {
   content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%;
   background: var(--c); margin-right: 8px; vertical-align: 2px;
 }
 .q-unit { color: var(--muted); font-size: .75rem; }
-.q-meta { margin: 2px 0 0; color: var(--text-2); font-size: .8125rem; }
+.q-meta { flex-basis: 100%; color: var(--text-2); font-size: .8125rem; }
 .q-prices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: auto 0; padding-top: 10px; }
 .q-price { display: flex; flex-direction: column; min-width: 0; }
 .q-lbl { color: var(--text-2); font-size: .8125rem; }
@@ -171,29 +169,31 @@ h1 { font-size: 1.25rem; letter-spacing: .02em; line-height: 1.25; }
 }
 .more:hover { color: var(--accent); }
 
+/* 手機：精簡排版，兩張卡盡量放進一屏 */
 @media (max-width: 720px) {
-  .quote { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); padding: 14px 14px 8px; gap: 4px; border-radius: 16px; }
-  .q-prices { margin-top: 6px; padding-top: 0; }
-  .mini td { padding: 6px 8px; }
-  .recent { justify-content: flex-start; margin-top: 6px; }
-  .q-note { margin-top: 2px; }
-  .updated { width: 100%; }
-}
-/* 矮螢幕（小手機）：壓縮第一屏，確保兩張卡都完整顯示 */
-@media (max-width: 720px) and (max-height: 720px) {
-  .screen { gap: 8px; padding-top: 8px; }
+  .screen { gap: 8px; padding-top: max(10px, env(safe-area-inset-top)); }
+  .updated { display: none; }
   h1 { font-size: 1.125rem; }
+  .byline { font-size: .75rem; }
   .brand img { width: 30px; height: 30px; }
-  .quote { padding: 10px 12px 4px; }
-  .quotes { gap: 8px; }
-  .q-val { font-size: 1.625rem; }
-  .q-note, .recent figcaption { display: none; }
-  .mini { font-size: .875rem; }
-  .mini td { padding: 3px 8px; }
-  .mini th { padding: 2px 8px; }
-  .q-prices { margin-top: 2px; }
-  .recent { margin-top: 2px; }
+  .quotes { gap: 10px; }
+  .quote { grid-template-columns: 1fr; padding: 12px 14px 8px; gap: 6px; border-radius: 16px; }
+  .q-head h2 { font-size: 1rem; }
+  .q-meta { flex-basis: auto; margin-left: auto; font-size: .75rem; }
+  .q-prices { margin: 4px 0 0; padding-top: 0; gap: 8px; }
+  .q-lbl { font-size: .75rem; }
+  .q-val { font-size: clamp(1.5rem, 8vw, 2rem); }
   .chg { font-size: .75rem; }
+  .q-note { margin-top: 2px; font-size: .6875rem; }
+  .recent { justify-content: flex-start; }
+  .recent figcaption { display: none; }
+  .mini { font-size: .875rem; }
+  .mini th { padding: 2px 4px; font-size: .6875rem; }
+  .mini td { padding: 5px 4px; }
+}
+@media (max-width: 720px) and (max-height: 700px) {
+  .mini td { padding: 3px 4px; }
+  .q-note { display: none; }
 }
 
 /* ---------- 下方：過去走勢、明細、計算機 ---------- */
