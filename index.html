@@ -48,9 +48,12 @@
           </div>
         </div>
       </div>
-      <figure class="spark">
-        <figcaption>近三個交易日 · 賣出</figcaption>
-        <div class="spark-box" id="shop-spark" role="img" aria-label="銀樓近三個交易日賣出價"></div>
+      <figure class="recent">
+        <figcaption>近三個交易日</figcaption>
+        <table class="mini">
+          <thead><tr><th>日期</th><th>賣出</th><th>買進</th><th>漲跌</th></tr></thead>
+          <tbody id="shop-recent"></tbody>
+        </table>
       </figure>
     </article>
 
@@ -75,9 +78,12 @@
         </div>
         <p class="q-note" id="bot-qian"></p>
       </div>
-      <figure class="spark">
-        <figcaption>近三個交易日收盤 · 賣出</figcaption>
-        <div class="spark-box" id="bot-spark" role="img" aria-label="臺灣銀行近三個交易日收盤賣出價"></div>
+      <figure class="recent">
+        <figcaption>近三個交易日（收盤）</figcaption>
+        <table class="mini">
+          <thead><tr><th>日期</th><th>賣出</th><th>買進</th><th>漲跌</th></tr></thead>
+          <tbody id="bot-recent"></tbody>
+        </table>
       </figure>
     </article>
   </section>

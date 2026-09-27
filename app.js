@@ -105,69 +105,44 @@ function renderCards() {
   $('updated').textContent = last
     ? `資料更新：${new Date(last).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false, month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`
     : '目前尚無資料';
-  renderSparks();
+  renderRecentTables();
 }
 
-/* ---------- 卡片內：近三個交易日收盤小圖 ---------- */
-const SVG_NS = 'http://www.w3.org/2000/svg';
-function svgEl(tag, attrs, text) {
-  const el = document.createElementNS(SVG_NS, tag);
-  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
-  if (text != null) el.textContent = text;
-  return el;
-}
-
-function drawSpark(box, rows, subLabel) {
-  const w = box.clientWidth, h = box.clientHeight;
-  box.replaceChildren();
-  if (!w || !h) return;
-  const svg = svgEl('svg', { viewBox: `0 0 ${w} ${h}`, 'aria-hidden': 'true' });
-  box.append(svg);
-  if (!rows.length) {
-    svg.append(svgEl('text', { class: 'sp-empty', x: w / 2, y: h / 2 }, '尚無資料'));
-    return;
-  }
-  const compact = h < 120;   // 矮螢幕：省略買進那一行
-  const padX = Math.min(48, w / 6), top = 24, bottom = compact ? 22 : 38;
-  const plotH = Math.max(10, h - top - bottom);
-  const vals = rows.map((r) => r.sell);
-  let lo = Math.min(...vals), hi = Math.max(...vals);
-  const span = Math.max(hi - lo, hi * 0.004);
-  lo -= span * 0.25; hi += span * 0.25;
-  const x = (i) => (rows.length === 1 ? w / 2 : padX + (i * (w - padX * 2)) / (rows.length - 1));
-  const y = (v) => top + (1 - (v - lo) / (hi - lo)) * plotH;
-  const baseY = top + plotH + 4;
-
-  // 漸層面積
-  const id = `g-${box.id}`;
-  const defs = svgEl('defs', {});
-  const grad = svgEl('linearGradient', { id, x1: 0, y1: 0, x2: 0, y2: 1 });
-  grad.append(svgEl('stop', { offset: '0%', 'stop-color': 'var(--c)', 'stop-opacity': '.28' }));
-  grad.append(svgEl('stop', { offset: '100%', 'stop-color': 'var(--c)', 'stop-opacity': '0' }));
-  defs.append(grad);
-  svg.append(defs);
-
-  const pts = rows.map((r, i) => [x(i), y(r.sell)]);
-  if (pts.length > 1) {
-    const line = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join('');
-    svg.append(svgEl('path', { d: `${line}L${pts[pts.length - 1][0]},${baseY}L${pts[0][0]},${baseY}Z`, fill: `url(#${id})` }));
-    svg.append(svgEl('path', { class: 'sp-line', d: line }));
-  }
-  svg.append(svgEl('line', { class: 'sp-base', x1: 0, x2: w, y1: baseY, y2: baseY }));
-
-  rows.forEach((r, i) => {
-    const [px, py] = pts[i];
-    const last = i === rows.length - 1;
-    svg.append(svgEl('circle', { class: 'sp-dot' + (last ? ' last' : ''), cx: px, cy: py, r: last ? 6 : 4.5 }));
-    svg.append(svgEl('text', { class: 'sp-val' + (last ? ' last' : ''), x: px, y: py - 11 }, fmt(r.sell)));
-    svg.append(svgEl('text', { class: 'sp-date', x: px, y: baseY + 15 }, `${md(r.date)}（${weekday(r.date)}）${r.slot && r.slot !== '收盤' ? r.slot : ''}`));
-    if (!compact) svg.append(svgEl('text', { class: 'sp-sub', x: px, y: baseY + 29 }, `${subLabel} ${fmt(r.buy)}`));
+/* ---------- 卡片內：近三個交易日 ---------- */
+function renderRecent(tbody, rows) {
+  const frag = document.createDocumentFragment();
+  const last4 = rows.slice(-4);                       // 多取一筆，用來算最舊那天的漲跌
+  const show = last4.slice(-3).reverse();              // 最新在上
+  show.forEach((r) => {
+    const i = last4.indexOf(r), prev = last4[i - 1];
+    const tr = document.createElement('tr');
+    const cells = [
+      [`${md(r.date)}（${weekday(r.date)}）${r.slot && r.slot !== '收盤' ? r.slot : ''}`, ''],
+      [fmt(r.sell), ''],
+      [fmt(r.buy), 'buy'],
+    ];
+    for (const [text, cls] of cells) {
+      const td = document.createElement('td'); td.textContent = text; if (cls) td.className = cls; tr.append(td);
+    }
+    const td = document.createElement('td');
+    if (prev) {
+      const d = r.sell - prev.sell;
+      td.textContent = d > 0 ? `▲${fmt(d)}` : d < 0 ? `▼${fmt(-d)}` : '—';
+      td.className = d > 0 ? 'pos' : d < 0 ? 'neg' : '';
+    }
+    tr.append(td);
+    frag.append(tr);
   });
+  if (!show.length) {
+    const tr = document.createElement('tr'), td = document.createElement('td');
+    td.colSpan = 4; td.className = 'empty'; td.textContent = '尚無資料'; tr.append(td); frag.append(tr);
+  }
+  tbody.replaceChildren(frag);
 }
 
-function renderSparks() {
-  drawSpark($('shop-spark'), state.shop.slice(-3), '買進');
-  drawSpark($('bot-spark'), botDaily().slice(-3), '買進');
+function renderRecentTables() {
+  renderRecent($('shop-recent'), state.shop);
+  renderRecent($('bot-recent'), botDaily());
 }
 
 /* ---------- 走勢圖 ---------- */
@@ -395,14 +370,6 @@ function bind() {
     renderTable();
   });
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { renderLegend(); renderChart(); });
-  if (window.ResizeObserver) {
-    let raf = 0;
-    const ro = new ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(renderSparks); });
-    ro.observe($('shop-spark'));
-    ro.observe($('bot-spark'));
-  } else {
-    window.addEventListener('resize', renderSparks);
-  }
 }
 
 function renderAll() {
@@ -421,5 +388,11 @@ load().then(renderAll).catch((err) => {
 });
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  // 新版上線時自動重新整理一次，避免停留在舊畫面
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController && !reloaded) { reloaded = true; location.reload(); }
+  });
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((reg) => reg.update()).catch(() => {});
 }
