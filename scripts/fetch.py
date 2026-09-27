@@ -164,7 +164,8 @@ def parse_shop_history(page: str) -> list[dict]:
     for name in ("buy", "sell"):
         m = re.search(rf"\b{name}\s*=\s*(\[\s*\[.*?\]\s*\])\s*;", page, flags=re.S)
         if not m:
-            raise ValueError(f"歷史頁找不到 {name} 資料")
+            i = page.find(f"{name} = [")
+            raise ValueError(f"歷史頁找不到 {name} 資料：{page[max(0, i - 300):i + 900]!r}")
         series[name] = {int(t): v for t, v in json.loads(m.group(1))}
     rows = []
     for t in sorted(series["sell"].keys() & series["buy"].keys()):
