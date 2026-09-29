@@ -103,8 +103,10 @@ function renderCards() {
 
   const last = Math.max(b.length ? b[b.length - 1].t : 0, s.length ? s[s.length - 1].t : 0);
   $('updated').textContent = last
-    ? `資料更新：${new Date(last).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false, month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`
+    ? `最新牌價 ${new Date(last).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false, month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`
     : '目前尚無資料';
+  const next = nextUpdate(new Date());
+  $('next-update').textContent = next ? `下次自動更新 約 ${next}` : '';
   renderRecentTables();
 }
 
@@ -381,11 +383,53 @@ function renderAll() {
   renderPnl();
 }
 
+/* ---------- 重新整理 ---------- */
+// 自動抓價排程（台灣時間，與 .github/workflows/update.yml 一致；實際常晚 5～15 分鐘）
+const SCHEDULE = { weekday: ['09:05', '10:15', '12:15', '15:45', '21:05'], saturday: ['10:15'] };
+
+function nextUpdate(now) {
+  for (let add = 0; add < 8; add++) {
+    const d = new Date(now.getTime() + add * 86400000);
+    const tw = new Date(d.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+    const dow = tw.getDay();
+    const list = dow >= 1 && dow <= 5 ? SCHEDULE.weekday : dow === 6 ? SCHEDULE.saturday : [];
+    const nowHM = add === 0 ? `${String(tw.getHours()).padStart(2, '0')}:${String(tw.getMinutes()).padStart(2, '0')}` : '';
+    const hit = list.find((t) => t > nowHM);
+    if (hit) return add === 0 ? hit : `${tw.getMonth() + 1}/${tw.getDate()}（${WEEK[dow]}）${hit}`;
+  }
+  return '';
+}
+
+let lastLoad = 0;
+let loading = false;
+async function refresh(manual) {
+  if (loading) return;
+  loading = true;
+  const btn = $('refresh');
+  if (manual) { btn.disabled = true; btn.textContent = '更新中…'; }
+  try {
+    await load();
+    lastLoad = Date.now();
+    renderAll();
+    if (manual) btn.textContent = '✓ 已是最新';
+  } catch (err) {
+    $('updated').textContent = '資料載入失敗：' + err.message;
+    if (manual) btn.textContent = '↻ 再試一次';
+  } finally {
+    loading = false;
+    if (manual) setTimeout(() => { btn.disabled = false; btn.textContent = '↻ 重新整理'; }, 2000);
+  }
+}
+
 bind();
-load().then(renderAll).catch((err) => {
-  $('updated').textContent = '資料載入失敗：' + err.message;
-  renderAll();
+$('refresh').addEventListener('click', () => refresh(true));
+// 從背景切回來（例如從主畫面再次點開）時，超過 3 分鐘就自動抓最新資料
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && Date.now() - lastLoad > 3 * 60000) refresh(false);
 });
+// 畫面一直開著時，每 10 分鐘自動更新一次
+setInterval(() => { if (document.visibilityState === 'visible') refresh(false); }, 10 * 60000);
+refresh(false).then(() => { if (!lastLoad) renderAll(); });
 
 if ('serviceWorker' in navigator) {
   // 新版上線時自動重新整理一次，避免停留在舊畫面

@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="黃金價格">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 
@@ -28,7 +28,6 @@
       </div>
     </div>
     <div class="top-right">
-      <p class="updated" id="updated">載入中…</p>
       <button type="button" class="install-btn" id="install-btn" hidden>＋ <span class="long">加到</span>主畫面</button>
     </div>
   </header>
@@ -94,7 +93,11 @@
     </article>
   </section>
 
-  <a class="more" href="#tools">過去走勢・計算機 <span aria-hidden="true">↓</span></a>
+  <div class="status">
+    <span class="status-time"><span id="updated">載入中…</span><span id="next-update"></span></span>
+    <button type="button" class="refresh" id="refresh">↻ 重新整理</button>
+    <a class="more" href="#tools">往下看走勢 <span aria-hidden="true">↓</span></a>
+  </div>
 </div>
 
 <main id="tools">
@@ -199,7 +202,7 @@
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="app.js?v=6"></script>
-<script src="install.js?v=6"></script>
+<script src="app.js?v=7"></script>
+<script src="install.js?v=7"></script>
 </body>
 </html>
